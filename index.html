@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Operaciones</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1c1c1c;
+            color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #333333;
+            color: #d4af37;
+            padding: 20px 10px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #2c2c2c;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background-color: #333333;
+            color: #d4af37;
+            font-size: 16px;
+        }
+        tr:nth-child(even) {
+            background-color: #444;
+        }
+        tr:hover {
+            background-color: #555;
+        }
+        input, select {
+            width: 95%;
+            padding: 8px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background-color: #333;
+            color: #f0f0f0;
+        }
+        .add-row {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .add-row button {
+            padding: 12px 20px;
+            background-color: #d4af37;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease-in-out;
+        }
+        .add-row button:hover {
+            background-color: #b78e30;
+            transform: scale(1.05);
+        }
+        .card-view {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            padding: 20px;
+            background: #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10;
+        }
+        .card-view h3 {
+            color: #d4af37;
+        }
+        .card-view button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #d4af37;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+        }
+        .card-view button:hover {
+            background-color: #b78e30;
+            transform: scale(1.05);
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <header>Registro de Operaciones del Día</header>
+    <div class="container">
+        <table id="operations-table">
+            <thead>
+                <tr>
+                    <th>Nombre del Cliente</th>
+                    <th>Ganancias (€)</th>
+                    <th>Pérdidas (€)</th> <!-- Nueva columna de Pérdidas -->
+                    <th>Mercado Operado</th>
+                    <th>Detalles</th>
+                    <th>Compra/Venta</th>
+                    <th>Fecha</th>
+                    <th>Categoría de Cuenta</th> <!-- Nueva columna de Categoría de Cuenta -->
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><input type="text" placeholder="Nombre del Cliente"></td>
+                    <td><input type="number" placeholder="Ganancias en Euros"></td>
+                    <td><input type="number" placeholder="Pérdidas en Euros"></td> <!-- Pérdidas en Euros -->
+                    <td>
+                        <select>
+                            <option value="forex">Forex</option>
+                            <option value="minerales">Minerales</option>
+                            <option value="materias_primas">Materias Primas</option>
+                            <option value="indices">Índices</option>
+                            <option value="acciones">Acciones</option>
+                            <option value="crypto">Crypto</option>
+                        </select>
+                    </td>
+                    <td><input type="text" placeholder="Detalles"></td>
+                    <td>
+                        <select>
+                            <option value="compra">Compra</option>
+                            <option value="venta">Venta</option>
+                        </select>
+                    </td>
+                    <td><input type="text" id="fecha" disabled></td>
+                    <td>
+                        <select>
+                            <option value="estandar">Estándar</option>
+                            <option value="vip">VIP</option>
+                            <option value="gold">Gold</option>
+                            <option value="platino">Platino</option>
+                            <option value="super_prime">Super Prime</option>
+                        </select>
+                    </td>
+                    <td><button onclick="showCard(this)">Seleccionar</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="add-row">
+            <button onclick="addRow()">Añadir Registro</button>
+        </div>
+    </div>
+    <div class="overlay" id="overlay" onclick="closeCard()"></div>
+    <div class="card-view" id="card">
+        <h3>Resumen del Cliente</h3>
+        <p id="card-content"></p>
+        <button onclick="closeCard()">Cerrar</button>
+    </div>
+    <script>
+        // Función para obtener la fecha actual
+        function getCurrentDate() {
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const year = today.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // Al añadir una fila, establecer la fecha
+        function addRow() {
+            const table = document.getElementById("operations-table").getElementsByTagName("tbody")[0];
+            const newRow = table.insertRow();
+
+            for (let i = 0; i < 8; i++) {
+                const newCell = newRow.insertCell(i);
+
+                if (i === 2) {
+                    const input = document.createElement("input");
+                    input.type = "number";
+                    input.placeholder = "Pérdidas en Euros";  // Nueva columna de pérdidas
+                    newCell.appendChild(input);
+                } else if (i === 3) {
+                    const select = document.createElement("select");
+                    const markets = ["Forex", "Minerales", "Materias Primas", "Índices", "Acciones", "Crypto"];
+                    markets.forEach(market => {
+                        const option = document.createElement("option");
+                        option.value = market.toLowerCase().replace(" ", "_");
+                        option.textContent = market;
+                        select.appendChild(option);
+                    });
+                    newCell.appendChild(select);
+                } else if (i === 5) {
+                    const inputFecha = document.createElement("input");
+                    inputFecha.type = "text";
+                    inputFecha.value = getCurrentDate();  // Establecer la fecha automáticamente
+                    inputFecha.disabled = true;
+                    newCell.appendChild(inputFecha);
+                } else if (i === 7) {
+                    const select = document.createElement("select");
+                    const options = ["Estándar", "VIP", "Gold", "Platino", "Super Prime"];
+                    options.forEach(optionText => {
+                        const option = document.createElement("option");
+                        option.value = optionText.toLowerCase().replace(" ", "_");
+                        option.textContent = optionText;
+                        select.appendChild(option);
+                    });
+                    newCell.appendChild(select);
+                } else if (i === 8) {
+                    const button = document.createElement("button");
+                    button.textContent = "Seleccionar";
+                    button.onclick = function () { showCard(button); };
+                    newCell.appendChild(button);
+                } else {
+                    const input = document.createElement("input");
+                    input.type = i === 1 || i === 2 ? "number" : "text"; 
+                    input.placeholder = i === 0 ? "Nombre del Cliente" :
+                                        i === 1 ? "Ganancias en Euros" :
+                                        i === 3 ? "Detalles" : "";
+                    newCell.appendChild(input);
+                }
+            }
+            // Asegurar que la fecha de la primera fila también se asigne
+            document.getElementById("fecha").value = getCurrentDate();
+        }
+
+        // Mostrar la vista de tarjeta con la información del cliente
+        function showCard(button) {
+            const row = button.parentNode.parentNode;
+            const cells = row.getElementsByTagName("td");
+
+            const nombre = cells[0].getElementsByTagName("input")[0].value || "N/A";
+            const ganancias = cells[1].getElementsByTagName("input")[0].value || "0";
+            const perdidas = cells[2].getElementsByTagName("input")[0].value || "0";  // Pérdidas
+            const mercado = cells[3].getElementsByTagName("select")[0].selectedOptions[0].text;
+            const detalles = cells[4].getElementsByTagName("input")[0].value || "N/A";
+            const tipo = cells[5].getElementsByTagName("select")[0].value;
+            const fecha = cells[6].getElementsByTagName("input")[0].value;
+            const categoria = cells[7].getElementsByTagName("select")[0].selectedOptions[0].text;  // Categoría de Cuenta
+
+            const cardContent = `
+                <strong>Cliente:</strong> ${nombre}<br>
+                <strong>Ganancias:</strong> €${ganancias}<br>
+                <strong>Pérdidas:</strong> €${perdidas}<br>
+                <strong>Mercado:</strong> ${mercado}<br>
+                <strong>Detalles:</strong> ${detalles}<br>
+                <strong>Operación:</strong> ${tipo}<br>
+                <strong>Fecha:</strong> ${fecha}<br>
+                <strong>Categoría:</strong> ${categoria}<br>
+                <strong>¡Felicidades!</strong>
+            `;
+
+            document.getElementById("card-content").innerHTML = cardContent;
+            document.getElementById("card").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+        }
+
+        // Cerrar la tarjeta de vista
+        function closeCard() {
+            document.getElementById("card").style.display = "none";
+            document.getElementById("overlay").style.display = "none";
+        }
+    </script>
+</body>
+</html>
